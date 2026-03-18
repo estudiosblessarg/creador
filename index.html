@@ -74,7 +74,7 @@ let version = 1
 const enc = v => encodeURIComponent(v)
 const dec = v => decodeURIComponent(v)
 
-// 🔥 NORMALIZADOR PRO (CLAVE DEL FIX)
+// 🔥 NORMALIZADOR
 function normalize(str) {
   return str
     .trim()
@@ -91,7 +91,6 @@ function addMarca() {
   if (!name) return
 
   const key = normalize(name)
-
   db[key] = { modelos: {} }
   render()
 }
@@ -103,7 +102,6 @@ function addModelo(marca) {
   if (!name) return
 
   const key = normalize(name)
-
   db[marca].modelos[key] = { versiones: {} }
   render()
 }
@@ -116,7 +114,6 @@ function addVersion(marca, modelo) {
   if (!name) return
 
   const key = normalize(name)
-
   db[marca].modelos[modelo].versiones[key] = { anios: {} }
   render()
 }
@@ -138,7 +135,30 @@ function addAnio(marca, modelo, ver) {
   render()
 }
 
-// ===== DELETE ROBUSTO =====
+// ===== ✏️ EDITAR AÑO =====
+
+function editAnio(marca, modelo, ver, anio) {
+  marca = dec(marca)
+  modelo = dec(modelo)
+  ver = dec(ver)
+  anio = dec(anio)
+
+  const actual = db[marca].modelos[modelo].versiones[ver].anios[anio]
+
+  const nuevo = prompt(`Editar precio (${anio})`, actual)
+
+  if (nuevo === null) return
+
+  if (isNaN(nuevo)) {
+    alert("Debe ser número")
+    return
+  }
+
+  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(nuevo)
+  render()
+}
+
+// ===== DELETE =====
 
 function deleteItem(path) {
   const keys = path.split(".").map(dec)
@@ -149,25 +169,12 @@ function deleteItem(path) {
     if (keys.length === 1) {
       delete db[keys[0]]
     }
-
     else if (keys.length === 2) {
-      if (db[keys[0]]?.modelos[keys[1]]) {
-        delete db[keys[0]].modelos[keys[1]]
-      } else {
-        console.warn("Modelo no encontrado:", keys)
-      }
+      delete db[keys[0]]?.modelos[keys[1]]
     }
-
     else if (keys.length === 3) {
-      const versiones = db[keys[0]]?.modelos[keys[1]]?.versiones
-
-      if (versiones && versiones[keys[2]]) {
-        delete versiones[keys[2]]
-      } else {
-        console.warn("Versión no encontrada:", keys)
-      }
+      delete db[keys[0]]?.modelos[keys[1]]?.versiones[keys[2]]
     }
-
   } catch (e) {
     console.error("Error eliminando:", e)
   }
@@ -175,25 +182,13 @@ function deleteItem(path) {
   render()
 }
 
-// ===== AÑOS =====
-
 function deleteAnio(marca, modelo, ver, anio) {
   marca = dec(marca)
   modelo = dec(modelo)
   ver = dec(ver)
   anio = dec(anio)
 
-  if (
-    db[marca] &&
-    db[marca].modelos[modelo] &&
-    db[marca].modelos[modelo].versiones[ver] &&
-    db[marca].modelos[modelo].versiones[ver].anios[anio]
-  ) {
-    delete db[marca].modelos[modelo].versiones[ver].anios[anio]
-  } else {
-    console.warn("Año no encontrado:", marca, modelo, ver, anio)
-  }
-
+  delete db[marca]?.modelos[modelo]?.versiones[ver]?.anios[anio]
   render()
 }
 
@@ -238,6 +233,7 @@ function render() {
 
           html += `<div>
             📅 ${anio} → 💰 $${precio}
+            <button class="secondary" onclick="editAnio('${enc(marca)}','${enc(modelo)}','${enc(ver)}','${enc(anio)}')">✏️</button>
             <button class="delete" onclick="deleteAnio('${enc(marca)}','${enc(modelo)}','${enc(ver)}','${enc(anio)}')">🗑</button>
           </div>`
         }
