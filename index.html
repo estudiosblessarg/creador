@@ -117,30 +117,25 @@ function addAnio(marca, modelo, ver) {
   render()
 }
 
-// ===== DELETE FIX =====
+// ===== DELETE FIX REAL =====
 
 function deleteItem(path) {
   const keys = path.split(".").map(dec)
 
   if (!confirm("¿Eliminar?")) return
 
-  try {
-    if (keys.length === 1 && db[keys[0]]) {
-      delete db[keys[0]]
-    }
+  let ref = db
 
-    if (keys.length === 2 && db[keys[0]]?.modelos[keys[1]]) {
-      delete db[keys[0]].modelos[keys[1]]
-    }
+  // navegar hasta el padre
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!ref[keys[i]]) return
+    ref = ref[keys[i]].modelos || ref[keys[i]].versiones || ref[keys[i]]
+  }
 
-    if (
-      keys.length === 3 &&
-      db[keys[0]]?.modelos[keys[1]]?.versiones[keys[2]]
-    ) {
-      delete db[keys[0]].modelos[keys[1]].versiones[keys[2]]
-    }
-  } catch (e) {
-    console.warn("Error borrando:", e)
+  const lastKey = keys[keys.length - 1]
+
+  if (ref[lastKey]) {
+    delete ref[lastKey]
   }
 
   render()
@@ -154,7 +149,15 @@ function deleteAnio(marca, modelo, ver, anio) {
   ver = dec(ver)
   anio = dec(anio)
 
-  delete db[marca]?.modelos[modelo]?.versiones[ver]?.anios[anio]
+  if (
+    db[marca] &&
+    db[marca].modelos[modelo] &&
+    db[marca].modelos[modelo].versiones[ver] &&
+    db[marca].modelos[modelo].versiones[ver].anios[anio]
+  ) {
+    delete db[marca].modelos[modelo].versiones[ver].anios[anio]
+  }
+
   render()
 }
 
