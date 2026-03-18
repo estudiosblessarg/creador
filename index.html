@@ -124,18 +124,21 @@ function deleteItem(path) {
 
   if (!confirm("¿Eliminar?")) return
 
-  let ref = db
+  try {
+    if (keys.length === 1) {
+      delete db[keys[0]]
+    }
 
-  // navegar hasta el padre
-  for (let i = 0; i < keys.length - 1; i++) {
-    if (!ref[keys[i]]) return
-    ref = ref[keys[i]].modelos || ref[keys[i]].versiones || ref[keys[i]]
-  }
+    else if (keys.length === 2) {
+      delete db[keys[0]]?.modelos[keys[1]]
+    }
 
-  const lastKey = keys[keys.length - 1]
+    else if (keys.length === 3) {
+      delete db[keys[0]]?.modelos[keys[1]]?.versiones[keys[2]]
+    }
 
-  if (ref[lastKey]) {
-    delete ref[lastKey]
+  } catch (e) {
+    console.warn("Error:", e)
   }
 
   render()
