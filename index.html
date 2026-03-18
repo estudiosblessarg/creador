@@ -1,75 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Admin Autos PRO+</title>
-
-<style>
-body {
-  font-family: Arial;
-  background: #0f172a;
-  color: white;
-  padding: 20px;
-}
-
-.container {
-  max-width: 1000px;
-  margin: auto;
-}
-
-.card {
-  background: #1e293b;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-}
-
-.title {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-button {
-  padding: 6px 10px;
-  margin: 3px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.add { background: #22c55e; color: white; }
-.delete { background: #ef4444; color: white; }
-.secondary { background: #3b82f6; color: white; }
-
-pre {
-  background: black;
-  padding: 10px;
-  font-size: 12px;
-  overflow-x: auto;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<h1>🚗 Admin Autos PRO+</h1>
-
-<button class="add" onclick="addMarca()">+ Marca</button>
-<button class="secondary" onclick="generateJSON()">📦 Generar JSON</button>
-<button class="secondary" onclick="downloadJSON()">⬇ Descargar</button>
-<button class="delete" onclick="resetAll()">🧹 Limpiar todo</button>
-
-<input type="file" id="fileInput" accept=".json" hidden>
-<button class="secondary" onclick="document.getElementById('fileInput').click()">📂 Cargar JSON</button>
-
-<div id="app"></div>
-
-<pre id="output"></pre>
-
-</div>
-
 <script>
 let db = {}
 let version = 1
@@ -149,11 +77,9 @@ function deleteAnio(marca, modelo, version, anio) {
 
 function resetAll() {
   const confirmReset = confirm("⚠️ Esto eliminará TODOS los datos. ¿Continuar?")
-
   if (!confirmReset) return
 
   db = {}
-
   localStorage.removeItem("autos_db")
   localStorage.removeItem("version")
 
@@ -176,7 +102,7 @@ function render() {
       <div class="title">📌 Marca</div>
       <div>${marca}</div>
       <button class="delete" onclick="deleteItem('${marca}')">Eliminar</button>
-      <button class="add" onclick="addModelo('${marca}')">+ Modelo</button>
+      <button class="add" data-marca="${marca}" onclick="addModelo(this.dataset.marca)">+ Modelo</button>
     `
 
     for (let modelo in db[marca].modelos) {
@@ -184,7 +110,12 @@ function render() {
         <div class="title">🚘 Modelo</div>
         <div>${modelo}</div>
         <button class="delete" onclick="deleteItem('${marca}.${modelo}')">Eliminar</button>
-        <button class="add" onclick="addVersion('${marca}','${modelo}')">+ Versión</button>
+        <button class="add"
+          data-marca="${marca}"
+          data-modelo="${modelo}"
+          onclick="addVersion(this.dataset.marca, this.dataset.modelo)">
+          + Versión
+        </button>
       `
 
       for (let version in db[marca].modelos[modelo].versiones) {
@@ -192,7 +123,13 @@ function render() {
           <div class="title">⚙️ Versión</div>
           <div>${version}</div>
           <button class="delete" onclick="deleteItem('${marca}.${modelo}.${version}')">Eliminar</button>
-          <button class="add" onclick="addAnio('${marca}','${modelo}','${version}')">+ Año</button>
+          <button class="add"
+            data-marca="${marca}"
+            data-modelo="${modelo}"
+            data-version="${version}"
+            onclick="addAnio(this.dataset.marca, this.dataset.modelo, this.dataset.version)">
+            + Año
+          </button>
         `
 
         const anios = db[marca].modelos[modelo].versiones[version].anios
@@ -201,8 +138,22 @@ function render() {
           html += `<div class="card">
             <div class="title">📅 Año</div>
             <div>${anio} - 💰 $${anios[anio]}</div>
-            <button class="secondary" onclick="editAnio('${marca}','${modelo}','${version}','${anio}')">Editar</button>
-            <button class="delete" onclick="deleteAnio('${marca}','${modelo}','${version}','${anio}')">Eliminar</button>
+            <button class="secondary"
+              data-marca="${marca}"
+              data-modelo="${modelo}"
+              data-version="${version}"
+              data-anio="${anio}"
+              onclick="editAnio(this.dataset.marca, this.dataset.modelo, this.dataset.version, this.dataset.anio)">
+              Editar
+            </button>
+            <button class="delete"
+              data-marca="${marca}"
+              data-modelo="${modelo}"
+              data-version="${version}"
+              data-anio="${anio}"
+              onclick="deleteAnio(this.dataset.marca, this.dataset.modelo, this.dataset.version, this.dataset.anio)">
+              Eliminar
+            </button>
           </div>`
         }
 
@@ -308,6 +259,3 @@ function loadLocal() {
 
 loadLocal()
 </script>
-
-</body>
-</html>
