@@ -24,11 +24,6 @@ body {
   border-radius: 10px;
 }
 
-.title {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
 button {
   padding: 6px 10px;
   margin: 3px;
@@ -59,7 +54,6 @@ pre {
 <button class="add" onclick="addMarca()">+ Marca</button>
 <button class="secondary" onclick="generateJSON()">📦 Generar JSON</button>
 <button class="secondary" onclick="downloadJSON()">⬇ Descargar</button>
-<button class="delete" onclick="resetAll()">🧹 Limpiar todo</button>
 
 <input type="file" id="fileInput" accept=".json" hidden>
 <button class="secondary" onclick="document.getElementById('fileInput').click()">📂 Cargar JSON</button>
@@ -72,7 +66,7 @@ pre {
 
 <script>
 let db = {}
-let fileVersion = 1
+let version = 1
 
 // ===== UI =====
 
@@ -97,7 +91,7 @@ function addVersion(marca, modelo) {
   render()
 }
 
-function addAnio(marca, modelo, ver) {
+function addAnio(marca, modelo, version) {
   const anio = prompt("Año")
   const precio = prompt("Precio")
 
@@ -108,7 +102,7 @@ function addAnio(marca, modelo, ver) {
     return
   }
 
-  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(precio)
+  db[marca].modelos[modelo].versiones[version].anios[anio] = Number(precio)
   render()
 }
 
@@ -124,8 +118,8 @@ function deleteItem(path) {
 
 // ===== EDITAR / ELIMINAR AÑOS =====
 
-function editAnio(marca, modelo, ver, anio) {
-  const actual = db[marca].modelos[modelo].versiones[ver].anios[anio]
+function editAnio(marca, modelo, version, anio) {
+  const actual = db[marca].modelos[modelo].versiones[version].anios[anio]
 
   const nuevoPrecio = prompt(`Editar precio para ${anio}`, actual)
 
@@ -136,31 +130,13 @@ function editAnio(marca, modelo, ver, anio) {
     return
   }
 
-  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(nuevoPrecio)
+  db[marca].modelos[modelo].versiones[version].anios[anio] = Number(nuevoPrecio)
   render()
 }
 
-function deleteAnio(marca, modelo, ver, anio) {
-  delete db[marca].modelos[modelo].versiones[ver].anios[anio]
+function deleteAnio(marca, modelo, version, anio) {
+  delete db[marca].modelos[modelo].versiones[version].anios[anio]
   render()
-}
-
-// ===== RESET TOTAL =====
-
-function resetAll() {
-  const confirmReset = confirm("⚠️ Esto eliminará TODOS los datos. ¿Continuar?")
-  if (!confirmReset) return
-
-  db = {}
-  localStorage.removeItem("autos_db")
-  localStorage.removeItem("fileVersion")
-
-  document.getElementById("app").innerHTML = ""
-  document.getElementById("output").textContent = ""
-
-  fileVersion = 1
-
-  alert("✅ Datos eliminados completamente")
 }
 
 // ===== RENDER =====
@@ -171,36 +147,32 @@ function render() {
 
   for (let marca in db) {
     let html = `<div class="card">
-      <div class="title">📌 Marca</div>
-      <div>${marca}</div>
-      <button class="delete" onclick="deleteItem('${marca}')">Eliminar</button>
+      <b>Marca:</b> ${marca}
+      <button class="delete" onclick="deleteItem('${marca}')">X</button>
       <button class="add" onclick="addModelo('${marca}')">+ Modelo</button>
     `
 
     for (let modelo in db[marca].modelos) {
       html += `<div class="card">
-        <div class="title">🚘 Modelo</div>
-        <div>${modelo}</div>
-        <button class="delete" onclick="deleteItem('${marca}.${modelo}')">Eliminar</button>
+        <b>Modelo:</b> ${modelo}
+        <button class="delete" onclick="deleteItem('${marca}.${modelo}')">X</button>
         <button class="add" onclick="addVersion('${marca}','${modelo}')">+ Versión</button>
       `
 
-      for (let ver in db[marca].modelos[modelo].versiones) {
+      for (let version in db[marca].modelos[modelo].versiones) {
         html += `<div class="card">
-          <div class="title">⚙️ Versión</div>
-          <div>${ver}</div>
-          <button class="delete" onclick="deleteItem('${marca}.${modelo}.${ver}')">Eliminar</button>
-          <button class="add" onclick="addAnio('${marca}','${modelo}','${ver}')">+ Año</button>
+          <b>Versión:</b> ${version}
+          <button class="delete" onclick="deleteItem('${marca}.${modelo}.${version}')">X</button>
+          <button class="add" onclick="addAnio('${marca}','${modelo}','${version}')">+ Año</button>
         `
 
-        const anios = db[marca].modelos[modelo].versiones[ver].anios
+        const anios = db[marca].modelos[modelo].versiones[version].anios
 
         for (let anio in anios) {
-          html += `<div class="card">
-            <div class="title">📅 Año</div>
-            <div>${anio} - 💰 $${anios[anio]}</div>
-            <button class="secondary" onclick="editAnio('${marca}','${modelo}','${ver}','${anio}')">Editar</button>
-            <button class="delete" onclick="deleteAnio('${marca}','${modelo}','${ver}','${anio}')">Eliminar</button>
+          html += `<div>
+            ${anio}: $${anios[anio]}
+            <button class="secondary" onclick="editAnio('${marca}','${modelo}','${version}','${anio}')">✏️</button>
+            <button class="delete" onclick="deleteAnio('${marca}','${modelo}','${version}','${anio}')">🗑</button>
           </div>`
         }
 
@@ -265,11 +237,13 @@ function loadJSONFile(event) {
 function getFileName() {
   const date = new Date()
   const formatted =
-    date.getFullYear() + "-" +
-    (date.getMonth() + 1) + "-" +
+    date.getFullYear() +
+    "-" +
+    (date.getMonth() + 1) +
+    "-" +
     date.getDate()
 
-  return `autos_${formatted}_v${fileVersion}.json`
+  return `autos_${formatted}_v${version}.json`
 }
 
 function downloadJSON() {
@@ -282,8 +256,8 @@ function downloadJSON() {
   a.download = getFileName()
   a.click()
 
-  fileVersion++
-  localStorage.setItem("fileVersion", fileVersion)
+  version++
+  localStorage.setItem("version", version)
 }
 
 // ===== LOCAL STORAGE =====
@@ -294,10 +268,10 @@ function saveLocal() {
 
 function loadLocal() {
   const saved = localStorage.getItem("autos_db")
-  const savedVersion = localStorage.getItem("fileVersion")
+  const savedVersion = localStorage.getItem("version")
 
   if (saved) db = JSON.parse(saved)
-  if (savedVersion) fileVersion = Number(savedVersion)
+  if (savedVersion) version = Number(savedVersion)
 
   render()
 }
