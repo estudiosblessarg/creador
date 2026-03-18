@@ -1,3 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin Autos PRO+</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+
+.card {
+  background: #1e293b;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+}
+
+.title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+button {
+  padding: 6px 10px;
+  margin: 3px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add { background: #22c55e; color: white; }
+.delete { background: #ef4444; color: white; }
+.secondary { background: #3b82f6; color: white; }
+
+pre {
+  background: black;
+  padding: 10px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🚗 Admin Autos PRO+</h1>
+
+<button class="add" onclick="addMarca()">+ Marca</button>
+<button class="secondary" onclick="generateJSON()">📦 Generar JSON</button>
+<button class="secondary" onclick="downloadJSON()">⬇ Descargar</button>
+<button class="delete" onclick="resetAll()">🧹 Limpiar todo</button>
+
+<input type="file" id="fileInput" accept=".json" hidden>
+<button class="secondary" onclick="document.getElementById('fileInput').click()">📂 Cargar JSON</button>
+
+<div id="app"></div>
+
+<pre id="output"></pre>
+
+</div>
+
 <script>
 let db = {}
 let version = 1
@@ -259,3 +331,6 @@ function loadLocal() {
 
 loadLocal()
 </script>
+
+</body>
+</html>
