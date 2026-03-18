@@ -72,7 +72,7 @@ pre {
 
 <script>
 let db = {}
-let version = 1
+let fileVersion = 1
 
 // ===== UI =====
 
@@ -97,7 +97,7 @@ function addVersion(marca, modelo) {
   render()
 }
 
-function addAnio(marca, modelo, version) {
+function addAnio(marca, modelo, ver) {
   const anio = prompt("Año")
   const precio = prompt("Precio")
 
@@ -108,7 +108,7 @@ function addAnio(marca, modelo, version) {
     return
   }
 
-  db[marca].modelos[modelo].versiones[version].anios[anio] = Number(precio)
+  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(precio)
   render()
 }
 
@@ -124,8 +124,8 @@ function deleteItem(path) {
 
 // ===== EDITAR / ELIMINAR AÑOS =====
 
-function editAnio(marca, modelo, version, anio) {
-  const actual = db[marca].modelos[modelo].versiones[version].anios[anio]
+function editAnio(marca, modelo, ver, anio) {
+  const actual = db[marca].modelos[modelo].versiones[ver].anios[anio]
 
   const nuevoPrecio = prompt(`Editar precio para ${anio}`, actual)
 
@@ -136,12 +136,12 @@ function editAnio(marca, modelo, version, anio) {
     return
   }
 
-  db[marca].modelos[modelo].versiones[version].anios[anio] = Number(nuevoPrecio)
+  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(nuevoPrecio)
   render()
 }
 
-function deleteAnio(marca, modelo, version, anio) {
-  delete db[marca].modelos[modelo].versiones[version].anios[anio]
+function deleteAnio(marca, modelo, ver, anio) {
+  delete db[marca].modelos[modelo].versiones[ver].anios[anio]
   render()
 }
 
@@ -153,12 +153,12 @@ function resetAll() {
 
   db = {}
   localStorage.removeItem("autos_db")
-  localStorage.removeItem("version")
+  localStorage.removeItem("fileVersion")
 
   document.getElementById("app").innerHTML = ""
   document.getElementById("output").textContent = ""
 
-  version = 1
+  fileVersion = 1
 
   alert("✅ Datos eliminados completamente")
 }
@@ -174,7 +174,7 @@ function render() {
       <div class="title">📌 Marca</div>
       <div>${marca}</div>
       <button class="delete" onclick="deleteItem('${marca}')">Eliminar</button>
-      <button class="add" data-marca="${marca}" onclick="addModelo(this.dataset.marca)">+ Modelo</button>
+      <button class="add" onclick="addModelo('${marca}')">+ Modelo</button>
     `
 
     for (let modelo in db[marca].modelos) {
@@ -182,50 +182,25 @@ function render() {
         <div class="title">🚘 Modelo</div>
         <div>${modelo}</div>
         <button class="delete" onclick="deleteItem('${marca}.${modelo}')">Eliminar</button>
-        <button class="add"
-          data-marca="${marca}"
-          data-modelo="${modelo}"
-          onclick="addVersion(this.dataset.marca, this.dataset.modelo)">
-          + Versión
-        </button>
+        <button class="add" onclick="addVersion('${marca}','${modelo}')">+ Versión</button>
       `
 
-      for (let version in db[marca].modelos[modelo].versiones) {
+      for (let ver in db[marca].modelos[modelo].versiones) {
         html += `<div class="card">
           <div class="title">⚙️ Versión</div>
-          <div>${version}</div>
-          <button class="delete" onclick="deleteItem('${marca}.${modelo}.${version}')">Eliminar</button>
-          <button class="add"
-            data-marca="${marca}"
-            data-modelo="${modelo}"
-            data-version="${version}"
-            onclick="addAnio(this.dataset.marca, this.dataset.modelo, this.dataset.version)">
-            + Año
-          </button>
+          <div>${ver}</div>
+          <button class="delete" onclick="deleteItem('${marca}.${modelo}.${ver}')">Eliminar</button>
+          <button class="add" onclick="addAnio('${marca}','${modelo}','${ver}')">+ Año</button>
         `
 
-        const anios = db[marca].modelos[modelo].versiones[version].anios
+        const anios = db[marca].modelos[modelo].versiones[ver].anios
 
         for (let anio in anios) {
           html += `<div class="card">
             <div class="title">📅 Año</div>
             <div>${anio} - 💰 $${anios[anio]}</div>
-            <button class="secondary"
-              data-marca="${marca}"
-              data-modelo="${modelo}"
-              data-version="${version}"
-              data-anio="${anio}"
-              onclick="editAnio(this.dataset.marca, this.dataset.modelo, this.dataset.version, this.dataset.anio)">
-              Editar
-            </button>
-            <button class="delete"
-              data-marca="${marca}"
-              data-modelo="${modelo}"
-              data-version="${version}"
-              data-anio="${anio}"
-              onclick="deleteAnio(this.dataset.marca, this.dataset.modelo, this.dataset.version, this.dataset.anio)">
-              Eliminar
-            </button>
+            <button class="secondary" onclick="editAnio('${marca}','${modelo}','${ver}','${anio}')">Editar</button>
+            <button class="delete" onclick="deleteAnio('${marca}','${modelo}','${ver}','${anio}')">Eliminar</button>
           </div>`
         }
 
@@ -290,13 +265,11 @@ function loadJSONFile(event) {
 function getFileName() {
   const date = new Date()
   const formatted =
-    date.getFullYear() +
-    "-" +
-    (date.getMonth() + 1) +
-    "-" +
+    date.getFullYear() + "-" +
+    (date.getMonth() + 1) + "-" +
     date.getDate()
 
-  return `autos_${formatted}_v${version}.json`
+  return `autos_${formatted}_v${fileVersion}.json`
 }
 
 function downloadJSON() {
@@ -309,8 +282,8 @@ function downloadJSON() {
   a.download = getFileName()
   a.click()
 
-  version++
-  localStorage.setItem("version", version)
+  fileVersion++
+  localStorage.setItem("fileVersion", fileVersion)
 }
 
 // ===== LOCAL STORAGE =====
@@ -321,10 +294,10 @@ function saveLocal() {
 
 function loadLocal() {
   const saved = localStorage.getItem("autos_db")
-  const savedVersion = localStorage.getItem("version")
+  const savedVersion = localStorage.getItem("fileVersion")
 
   if (saved) db = JSON.parse(saved)
-  if (savedVersion) version = Number(savedVersion)
+  if (savedVersion) fileVersion = Number(savedVersion)
 
   render()
 }
