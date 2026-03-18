@@ -59,6 +59,7 @@ pre {
 <button class="add" onclick="addMarca()">+ Marca</button>
 <button class="secondary" onclick="generateJSON()">📦 Generar JSON</button>
 <button class="secondary" onclick="downloadJSON()">⬇ Descargar</button>
+<button class="delete" onclick="resetAll()">🧹 Limpiar todo</button>
 
 <input type="file" id="fileInput" accept=".json" hidden>
 <button class="secondary" onclick="document.getElementById('fileInput').click()">📂 Cargar JSON</button>
@@ -142,6 +143,26 @@ function editAnio(marca, modelo, version, anio) {
 function deleteAnio(marca, modelo, version, anio) {
   delete db[marca].modelos[modelo].versiones[version].anios[anio]
   render()
+}
+
+// ===== RESET TOTAL =====
+
+function resetAll() {
+  const confirmReset = confirm("⚠️ Esto eliminará TODOS los datos. ¿Continuar?")
+
+  if (!confirmReset) return
+
+  db = {}
+
+  localStorage.removeItem("autos_db")
+  localStorage.removeItem("version")
+
+  document.getElementById("app").innerHTML = ""
+  document.getElementById("output").textContent = ""
+
+  version = 1
+
+  alert("✅ Datos eliminados completamente")
 }
 
 // ===== RENDER =====
