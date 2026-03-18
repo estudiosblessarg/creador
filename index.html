@@ -68,30 +68,63 @@ pre {
 let db = {}
 let version = 1
 
+// ===== HELPERS (FIX CLAVE) =====
+
+function enc(v) {
+  return encodeURIComponent(v)
+}
+
+function dec(v) {
+  return decodeURIComponent(v)
+}
+
 // ===== UI =====
 
 function addMarca() {
   const name = prompt("Marca")
   if (!name) return
-  db[name.toLowerCase()] = { modelos: {} }
+
+  const key = name.toLowerCase()
+
+  if (db[key]) {
+    alert("Ya existe esa marca")
+    return
+  }
+
+  db[key] = { modelos: {} }
   render()
 }
 
 function addModelo(marca) {
+  marca = dec(marca)
+
   const name = prompt("Modelo")
   if (!name) return
-  db[marca].modelos[name.toLowerCase()] = { versiones: {} }
+
+  const key = name.toLowerCase()
+
+  db[marca].modelos[key] = { versiones: {} }
   render()
 }
 
 function addVersion(marca, modelo) {
+  marca = dec(marca)
+  modelo = dec(modelo)
+
   const name = prompt("Versión")
   if (!name) return
-  db[marca].modelos[modelo].versiones[name.toLowerCase()] = { anios: {} }
+
+  const key = name.toLowerCase()
+
+  db[marca].modelos[modelo].versiones[key] = { anios: {} }
   render()
 }
 
-function addAnio(marca, modelo, version) {
+function addAnio(marca, modelo, ver) {
+  marca = dec(marca)
+  modelo = dec(modelo)
+  ver = dec(ver)
+
   const anio = prompt("Año")
   const precio = prompt("Precio")
 
@@ -102,12 +135,14 @@ function addAnio(marca, modelo, version) {
     return
   }
 
-  db[marca].modelos[modelo].versiones[version].anios[anio] = Number(precio)
+  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(precio)
   render()
 }
 
 function deleteItem(path) {
-  const keys = path.split(".")
+  const keys = path.split(".").map(dec)
+
+  if (!confirm("¿Eliminar elemento?")) return
 
   if (keys.length === 1) delete db[keys[0]]
   if (keys.length === 2) delete db[keys[0]].modelos[keys[1]]
@@ -116,27 +151,56 @@ function deleteItem(path) {
   render()
 }
 
-// ===== EDITAR / ELIMINAR AÑOS =====
+// ===== AÑOS =====
 
-function editAnio(marca, modelo, version, anio) {
-  const actual = db[marca].modelos[modelo].versiones[version].anios[anio]
+function editAnio(marca, modelo, ver, anio) {
+  marca = dec(marca)
+  modelo = dec(modelo)
+  ver = dec(ver)
+  anio = dec(anio)
 
-  const nuevoPrecio = prompt(`Editar precio para ${anio}`, actual)
+  const actual = db[marca].modelos[modelo].versiones[ver].anios[anio]
 
-  if (!nuevoPrecio) return
+  const nuevo = prompt(`Editar precio (${anio})`, actual)
 
-  if (isNaN(nuevoPrecio)) {
-    alert("El precio debe ser un número")
+  if (!nuevo) return
+
+  if (isNaN(nuevo)) {
+    alert("Debe ser número")
     return
   }
 
-  db[marca].modelos[modelo].versiones[version].anios[anio] = Number(nuevoPrecio)
+  db[marca].modelos[modelo].versiones[ver].anios[anio] = Number(nuevo)
   render()
 }
 
-function deleteAnio(marca, modelo, version, anio) {
-  delete db[marca].modelos[modelo].versiones[version].anios[anio]
+function deleteAnio(marca, modelo, ver, anio) {
+  marca = dec(marca)
+  modelo = dec(modelo)
+  ver = dec(ver)
+  anio = dec(anio)
+
+  if (!confirm("Eliminar año?")) return
+
+  delete db[marca].modelos[modelo].versiones[ver].anios[anio]
   render()
+}
+
+// ===== 🧹 RESET TOTAL =====
+
+function resetAll() {
+  if (!confirm("⚠️ Esto borra TODO")) return
+
+  db = {}
+  localStorage.removeItem("autos_db")
+  localStorage.removeItem("version")
+
+  document.getElementById("app").innerHTML = ""
+  document.getElementById("output").textContent = ""
+
+  version = 1
+
+  alert("✅ Todo eliminado")
 }
 
 // ===== RENDER =====
@@ -148,31 +212,31 @@ function render() {
   for (let marca in db) {
     let html = `<div class="card">
       <b>Marca:</b> ${marca}
-      <button class="delete" onclick="deleteItem('${marca}')">X</button>
-      <button class="add" onclick="addModelo('${marca}')">+ Modelo</button>
+      <button class="delete" onclick="deleteItem('${enc(marca)}')">X</button>
+      <button class="add" onclick="addModelo('${enc(marca)}')">+ Modelo</button>
     `
 
     for (let modelo in db[marca].modelos) {
       html += `<div class="card">
         <b>Modelo:</b> ${modelo}
-        <button class="delete" onclick="deleteItem('${marca}.${modelo}')">X</button>
-        <button class="add" onclick="addVersion('${marca}','${modelo}')">+ Versión</button>
+        <button class="delete" onclick="deleteItem('${enc(marca)}.${enc(modelo)}')">X</button>
+        <button class="add" onclick="addVersion('${enc(marca)}','${enc(modelo)}')">+ Versión</button>
       `
 
-      for (let version in db[marca].modelos[modelo].versiones) {
+      for (let ver in db[marca].modelos[modelo].versiones) {
         html += `<div class="card">
-          <b>Versión:</b> ${version}
-          <button class="delete" onclick="deleteItem('${marca}.${modelo}.${version}')">X</button>
-          <button class="add" onclick="addAnio('${marca}','${modelo}','${version}')">+ Año</button>
+          <b>Versión:</b> ${ver}
+          <button class="delete" onclick="deleteItem('${enc(marca)}.${enc(modelo)}.${enc(ver)}')">X</button>
+          <button class="add" onclick="addAnio('${enc(marca)}','${enc(modelo)}','${enc(ver)}')">+ Año</button>
         `
 
-        const anios = db[marca].modelos[modelo].versiones[version].anios
+        const anios = db[marca].modelos[modelo].versiones[ver].anios
 
         for (let anio in anios) {
           html += `<div>
             ${anio}: $${anios[anio]}
-            <button class="secondary" onclick="editAnio('${marca}','${modelo}','${version}','${anio}')">✏️</button>
-            <button class="delete" onclick="deleteAnio('${marca}','${modelo}','${version}','${anio}')">🗑</button>
+            <button class="secondary" onclick="editAnio('${enc(marca)}','${enc(modelo)}','${enc(ver)}','${enc(anio)}')">✏️</button>
+            <button class="delete" onclick="deleteAnio('${enc(marca)}','${enc(modelo)}','${enc(ver)}','${enc(anio)}')">🗑</button>
           </div>`
         }
 
@@ -196,7 +260,7 @@ function generateJSON() {
     JSON.stringify(db, null, 2)
 }
 
-// ===== CARGAR JSON =====
+// ===== FILE =====
 
 document.getElementById("fileInput").addEventListener("change", loadJSONFile)
 
@@ -208,48 +272,26 @@ function loadJSONFile(event) {
 
   reader.onload = function(e) {
     try {
-      const parsed = JSON.parse(e.target.result)
-
-      if (typeof parsed !== "object") {
-        alert("JSON inválido")
-        return
-      }
-
-      db = parsed
+      db = JSON.parse(e.target.result)
       render()
-
-      document.getElementById("output").textContent =
-        JSON.stringify(db, null, 2)
-
-      alert("✅ JSON cargado correctamente")
-
-    } catch (err) {
-      alert("❌ Error en JSON: " + err.message)
+      alert("✅ JSON cargado")
+    } catch {
+      alert("❌ JSON inválido")
     }
   }
 
   reader.readAsText(file)
-  event.target.value = ""
 }
 
-// ===== VERSIONADO =====
+// ===== DOWNLOAD =====
 
 function getFileName() {
-  const date = new Date()
-  const formatted =
-    date.getFullYear() +
-    "-" +
-    (date.getMonth() + 1) +
-    "-" +
-    date.getDate()
-
-  return `autos_${formatted}_v${version}.json`
+  const d = new Date()
+  return `autos_${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}_v${version}.json`
 }
 
 function downloadJSON() {
-  const json = JSON.stringify(db, null, 2)
-
-  const blob = new Blob([json], { type: "application/json" })
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" })
   const a = document.createElement("a")
 
   a.href = URL.createObjectURL(blob)
@@ -257,10 +299,9 @@ function downloadJSON() {
   a.click()
 
   version++
-  localStorage.setItem("version", version)
 }
 
-// ===== LOCAL STORAGE =====
+// ===== STORAGE =====
 
 function saveLocal() {
   localStorage.setItem("autos_db", JSON.stringify(db))
@@ -268,11 +309,7 @@ function saveLocal() {
 
 function loadLocal() {
   const saved = localStorage.getItem("autos_db")
-  const savedVersion = localStorage.getItem("version")
-
   if (saved) db = JSON.parse(saved)
-  if (savedVersion) version = Number(savedVersion)
-
   render()
 }
 
