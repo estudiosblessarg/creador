@@ -74,29 +74,50 @@ let version = 1
 const enc = v => encodeURIComponent(v)
 const dec = v => decodeURIComponent(v)
 
+// 🔥 NORMALIZADOR PRO (CLAVE DEL FIX)
+function normalize(str) {
+  return str
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+}
+
 // ===== CRUD =====
 
 function addMarca() {
   const name = prompt("Marca")
   if (!name) return
-  db[name.toLowerCase()] = { modelos: {} }
+
+  const key = normalize(name)
+
+  db[key] = { modelos: {} }
   render()
 }
 
 function addModelo(marca) {
   marca = dec(marca)
+
   const name = prompt("Modelo")
   if (!name) return
-  db[marca].modelos[name.toLowerCase()] = { versiones: {} }
+
+  const key = normalize(name)
+
+  db[marca].modelos[key] = { versiones: {} }
   render()
 }
 
 function addVersion(marca, modelo) {
   marca = dec(marca)
   modelo = dec(modelo)
+
   const name = prompt("Versión")
   if (!name) return
-  db[marca].modelos[modelo].versiones[name.toLowerCase()] = { anios: {} }
+
+  const key = normalize(name)
+
+  db[marca].modelos[modelo].versiones[key] = { anios: {} }
   render()
 }
 
@@ -117,7 +138,7 @@ function addAnio(marca, modelo, ver) {
   render()
 }
 
-// ===== DELETE FIX REAL =====
+// ===== DELETE ROBUSTO =====
 
 function deleteItem(path) {
   const keys = path.split(".").map(dec)
@@ -130,15 +151,25 @@ function deleteItem(path) {
     }
 
     else if (keys.length === 2) {
-      delete db[keys[0]]?.modelos[keys[1]]
+      if (db[keys[0]]?.modelos[keys[1]]) {
+        delete db[keys[0]].modelos[keys[1]]
+      } else {
+        console.warn("Modelo no encontrado:", keys)
+      }
     }
 
     else if (keys.length === 3) {
-      delete db[keys[0]]?.modelos[keys[1]]?.versiones[keys[2]]
+      const versiones = db[keys[0]]?.modelos[keys[1]]?.versiones
+
+      if (versiones && versiones[keys[2]]) {
+        delete versiones[keys[2]]
+      } else {
+        console.warn("Versión no encontrada:", keys)
+      }
     }
 
   } catch (e) {
-    console.warn("Error:", e)
+    console.error("Error eliminando:", e)
   }
 
   render()
@@ -159,6 +190,8 @@ function deleteAnio(marca, modelo, ver, anio) {
     db[marca].modelos[modelo].versiones[ver].anios[anio]
   ) {
     delete db[marca].modelos[modelo].versiones[ver].anios[anio]
+  } else {
+    console.warn("Año no encontrado:", marca, modelo, ver, anio)
   }
 
   render()
@@ -244,8 +277,12 @@ fileInput.addEventListener("change", e => {
   const reader = new FileReader()
 
   reader.onload = ev => {
-    db = JSON.parse(ev.target.result)
-    render()
+    try {
+      db = JSON.parse(ev.target.result)
+      render()
+    } catch {
+      alert("JSON inválido")
+    }
   }
 
   reader.readAsText(file)
